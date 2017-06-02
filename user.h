@@ -75,7 +75,7 @@ extern "C" {
 //! \brief Defines the full scale frequency for IQ variable, Hz
 //! \brief All frequencies are converted into (pu) based on the ratio to this value
 //! \brief this value MUST be larger than the maximum speed that you are expecting from the motor 
-#define USER_IQ_FULL_SCALE_FREQ_Hz        (800.0)   // 800 Example with buffer for 8-pole 6 KRPM motor to be run to 10 KRPM with field weakening; Hz =(RPM * Poles) / 120
+#define USER_IQ_FULL_SCALE_FREQ_Hz        (1300.0)   // 800 Example with buffer for 8-pole 6 KRPM motor to be run to 10 KRPM with field weakening; Hz =(RPM * Poles) / 120
 
 //! \brief Defines full scale value for the IQ30 variable of Voltage inside the system
 //! \brief All voltages are converted into (pu) based on the ratio to this value
@@ -341,6 +341,7 @@ extern "C" {
 #define medical_instrument          117
 #define multistar_4108_380kv        118
 #define propdrive_28_26_1100kv		119
+#define propdrive_28_26s_1000kv     120
 
 // IPM motors
 // If user provides separate Ls-d, Ls-q
@@ -371,8 +372,9 @@ extern "C" {
 //#define USER_MOTOR medical_instrument
 //#define USER_MOTOR Kinetek_YDQ1p3_4
 //#define USER_MOTOR LPKF_CAD_CAM
-#define USER_MOTOR multistar_4108_380kv
-//#define USER_MOTOR propdrive_28_26_1100kv
+//#define USER_MOTOR multistar_4108_380kv
+#define USER_MOTOR propdrive_28_26_1100kv
+//#define USER_MOTOR propdrive_28_26s_1000kv
 
 
 #if (USER_MOTOR == Estun_EMJ_04APB22)                  // Name must match the motor #define
@@ -626,6 +628,20 @@ extern "C" {
 #define USER_MOTOR_IND_EST_CURRENT      (-2.0)
 #define USER_MOTOR_MAX_CURRENT          (10.0)
 #define USER_MOTOR_FLUX_EST_FREQ_Hz     (200.0)
+
+#elif (USER_MOTOR == propdrive_28_26s_1000kv)
+#define USER_MOTOR_TYPE                 MOTOR_Type_Pm
+#define USER_MOTOR_NUM_POLE_PAIRS       (6)
+#define USER_MOTOR_Rr                   (NULL)
+#define USER_MOTOR_Rs                   (0.07382252) //0.07382252
+#define USER_MOTOR_Ls_d                 (2.765895e-05) //2.765895e-05
+#define USER_MOTOR_Ls_q                 (2.765895e-05) //2.765895e-05
+#define USER_MOTOR_RATED_FLUX           (0.005978892) //0.005978892
+#define USER_MOTOR_MAGNETIZING_CURRENT  (NULL)
+#define USER_MOTOR_RES_EST_CURRENT      (2.0)
+#define USER_MOTOR_IND_EST_CURRENT      (-2.0)
+#define USER_MOTOR_MAX_CURRENT          (14.0)
+#define USER_MOTOR_FLUX_EST_FREQ_Hz     (100.0)
 
 #else
 #error No motor type specified
