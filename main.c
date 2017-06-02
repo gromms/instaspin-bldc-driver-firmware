@@ -77,7 +77,7 @@
 // **************************************************************************
 // the globals
 
-uint16_t boardId = '2';
+uint16_t boardId = '1';
 
 volatile uint16_t writeData = 0b0101010101010101;
 volatile uint16_t eepromReadData = 0;
@@ -336,8 +336,8 @@ void main(void)
 
 
 
-  gMotorVars.Kp_spd = _IQ(20.0);
-  gMotorVars.MaxAccel_krpmps = _IQ(10.0);
+  gMotorVars.Kp_spd = _IQ(4.0);
+  gMotorVars.MaxAccel_krpmps = _IQ(30.0);
   gMotorVars.SpeedRef_krpm = _IQ(0.0);
   gMotorVars.Flag_enableSys = 1;
 
@@ -352,20 +352,27 @@ void main(void)
     // loop while the enable system flag is true
     while(gMotorVars.Flag_enableSys)
     {
-    	/*if (commandReceived) {
+
+    	if (commandReceived) {
 
     	    commandReceived = 0;
 
-            if (buf[0] == boardId && buf[2] == 's') {
+            /*if (buf[0] == boardId && buf[2] == 's') {
     		    buf[counter - 1] = '\0';
 				gMotorVars.SpeedRef_krpm = _atoIQ(buf + 3);
 				gMotorVars.Flag_Run_Identify = 1;
-			}
+			}*/
+            if (buf[1] == boardId && buf[2] == 's') {
+                long value = ((long)buf[3]) | ((long)buf[4] << 8) | ((long)buf[5] << 16) | ((long)buf[6] << 24);
+
+                gMotorVars.SpeedRef_krpm = value;
+                gMotorVars.Flag_Run_Identify = 1;
+            }
 
     		commandStart = 0;
     		counter = 0;
 
-    	}*/
+    	}
 
     	CTRL_Obj *obj = (CTRL_Obj *)ctrlHandle;
 
@@ -923,7 +930,7 @@ void updateKpKiGains(CTRL_Handle handle)
   return;
 } // end of updateKpKiGains() function
 
-interrupt void SCI_RX_ISR(void) {
+/*interrupt void SCI_RX_ISR(void) {
     rxIntCounter++;
 
     while (SCI_rxDataReady(sciHandle) == 1) {
@@ -981,28 +988,6 @@ interrupt void SCI_RX_ISR(void) {
                 if (c == '\n') {
                     commandReceived = 1;
 
-                    // Enable the Library internal PI.  Iq is referenced by the speed PI now
-                    CTRL_setFlag_enableSpeedCtrl(ctrlHandle, true);
-
-                    // loop while the enable system flag is true
-                    if(gMotorVars.Flag_enableSys)
-                    {
-                        if (commandReceived) {
-
-                            commandReceived = 0;
-
-                            if (buf[0] == boardId && buf[2] == 's') {
-                                buf[counter - 1] = '\0';
-                                gMotorVars.SpeedRef_krpm = _atoIQ(buf + 3);
-                                gMotorVars.Flag_Run_Identify = 1;
-                            }
-
-                            commandStart = 0;
-                            counter = 0;
-
-                        }
-                    }
-
                 }
                 break;
             default:
@@ -1017,7 +1002,74 @@ interrupt void SCI_RX_ISR(void) {
     SCI_clearRxFifoInt(sciHandle);
 
     PIE_clearInt(halHandle->pieHandle, PIE_GroupNumber_9);
+}*/
+
+interrupt void SCI_RX_ISR(void) {
+    rxIntCounter++;
+
+    while (SCI_rxDataReady(sciHandle) == 1) {
+        char c = SCI_read(sciHandle);
+
+        //buf[counter] = c;
+        //counter++;
+
+        if (counter < 8) {
+            //commandReceived = 1;
+
+            switch (counter) {
+            case 0:
+                if (c == '<') {
+                    buf[counter] = c;
+                    counter++;
+                } else {
+                    counter = 0;
+                }
+                break;
+            case 1:
+                if (c == boardId) {
+                    buf[counter] = c;
+                    counter++;
+                } else {
+                    counter = 0;
+                }
+                break;
+            case 2:
+                if (c == 's') {
+                    buf[counter] = c;
+                    counter++;
+                    sendSpeed = 1;
+                } else {
+                    counter = 0;
+                }
+                break;
+            case 3:
+            case 4:
+            case 5:
+            case 6:
+                buf[counter] = c;
+                counter++;
+                break;
+            case 7:
+                if (c == '>') {
+                    buf[counter] = c;
+                    counter++;
+                    //sendSpeed = 1;
+                } else {
+                    counter = 0;
+                }
+                break;
+            default:
+                counter = 0;
+            }
+        }
+    }
+
+    SCI_clearRxFifoOvf(sciHandle);
+    SCI_clearRxFifoInt(sciHandle);
+
+    PIE_clearInt(halHandle->pieHandle, PIE_GroupNumber_9);
 }
+
 
 void scia_init() {
 	sciHandle = SCI_init((void *) SCIA_BASE_ADDR, sizeof(SCI_Obj));
